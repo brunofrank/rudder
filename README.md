@@ -1,4 +1,6 @@
-# rudder
+![Rudder](https://user-images.githubusercontent.com/40139/110044103-5220a600-7d27-11eb-84b7-0d462159a4f9.png)
+
+# Rudder
 
 rudder is a set of helpers to easily opperate docker-compose commands
 
