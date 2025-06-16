@@ -22,6 +22,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	command := os.Args[1]
+
+	if command == "init" {
+		createRudderConfig()
+		return
+	}
+
 	// Read and parse rudder.yml
 	configFile, err := os.ReadFile(".rudder.yml")
 	if err != nil {
@@ -35,7 +42,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	command := os.Args[1]
 	args := os.Args[2:]
 
 	// Get the command definition from config
@@ -61,6 +67,34 @@ func main() {
 	}
 }
 
+func createRudderConfig() {
+	defaultConfig := `rudder:
+  default_service: web
+  commands:
+    ssh: bash -l
+    yarn: yarn $ARGS
+    pristine:
+      - echo "This will destroy your containers and replace them with new ones." @host
+      # - docker compose down -v @host
+      # - docker compose up --build --force-recreate --no-start @host
+    setup:
+      - echo "Setting up project..." @host
+      # - yarn install
+  `
+
+	if _, err := os.Stat(".rudder.yml"); err == nil {
+		fmt.Println("Error: .rudder.yml already exists")
+		os.Exit(1)
+	}
+
+	if err := os.WriteFile(".rudder.yml", []byte(defaultConfig), 0644); err != nil {
+		fmt.Printf("Error creating .rudder.yml: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Println("Created .rudder.yml with default configuration")
+}
+
 func executeCommand(cmdStr string, args []string, defaultService string) {
 	// Check if command contains @ for specific service
 	parts := strings.Split(cmdStr, "@")
@@ -71,19 +105,16 @@ func executeCommand(cmdStr string, args []string, defaultService string) {
 		service = strings.TrimSpace(parts[1])
 	}
 
-  cmd = strings.ReplaceAll(cmd, "$ARGS", strings.Join(args, " "))
+	cmd = strings.ReplaceAll(cmd, "$ARGS", strings.Join(args, " "))
 
 	// Prepare the command
 	var finalCmd *exec.Cmd
-
-  fmt.Println("Executing command locally:", cmd)
 
 	if service == "host" {
 		// Local execution
 		finalCmd = exec.Command("bash", "-c", cmd)
 	} else {
 		// Docker Compose execution
-		// Load environment variables
 		finalCmd = exec.Command("bash", "-c", fmt.Sprintf("docker compose run --rm %s %s", service, cmd))
 	}
 
