@@ -15,12 +15,6 @@ builds:
     ignore:
       - goos: windows
         goarch: arm64
-    sign:
-      artifacts: all
-      signature: "${artifact}.sig"
-      ids:
-        - rudder_Darwin_amd64
-        - rudder_Darwin_arm64
 
 archives:
   - format: tar.gz
@@ -33,13 +27,6 @@ archives:
     format_overrides:
       - goos: windows
         format: zip
-
-notarize:
-  - artifacts: all
-    skip: true
-    ids:
-      - rudder_Darwin_amd64
-      - rudder_Darwin_arm64
 
 changelog:
   sort: asc
