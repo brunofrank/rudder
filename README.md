@@ -29,11 +29,11 @@ rudder:
     restart:web: restart web @ host
     pristine:
       - echo "This will destroy your containers and replace them with new ones." @ host
-      - down -v @ host
-      - up --build --force-recreate --no-start @ host
+      - docker compose down -v @ host
+      - docker compose up --build --force-recreate --no-start @ host
       - yarn install
       - bundle
-      - restart @ host
+      - docker compose restart @ host
       - echo "Creating data..." @ host
       - rake db:create
       - rake db:extensions
