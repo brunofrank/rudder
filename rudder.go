@@ -102,12 +102,12 @@ func main() {
 
 	command := os.Args[1]
 
-	if command == "init" {
+	if command == "--init" {
 		createRudderConfig()
 		return
 	}
 
-	if command == "update" {
+	if command == "--update" {
 		if err := checkForUpdates(); err != nil {
 			fmt.Printf("Error: %v\n", err)
 			os.Exit(1)

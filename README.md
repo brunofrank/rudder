@@ -13,7 +13,7 @@ sh -c "$(curl -fsSL https://raw.githubusercontent.com/brunofrank/rudder/refs/hea
 In the project root you want to use rudder run:
 
 ```sh
-rudder init
+rudder --init
 ```
 
 # Project configuration
@@ -65,4 +65,12 @@ rudder:
       - rake db:migrate
       - rake db:seed
     guard: bundle exec guard
+```
+
+# Updating
+
+To update rudder you just need to run:
+
+```sh
+rudder --update
 ```
