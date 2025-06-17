@@ -1,9 +1,13 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -11,9 +15,82 @@ import (
 
 type RudderConfig struct {
 	Rudder struct {
-		DefaultService string `yaml:"default_service"`
+		DefaultService string                 `yaml:"default_service"`
 		Commands       map[string]interface{} `yaml:"commands"`
 	} `yaml:"rudder"`
+}
+
+type Release struct {
+	TagName string `json:"tag_name"`
+}
+
+func checkForUpdates() error {
+	// Get current version
+	versionFile := filepath.Join(os.Getenv("HOME"), ".rudder", "version")
+	if data, err := os.ReadFile(versionFile); err == nil {
+		currentVersion = strings.TrimSpace(string(data))
+	}
+
+	// Get latest version from GitHub
+	resp, err := http.Get("https://api.github.com/repos/brunofrank/rudder/releases/latest")
+	if err != nil {
+		return fmt.Errorf("failed to check for updates: %v", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response: %v", err)
+	}
+
+	var release Release
+	if err := json.Unmarshal(body, &release); err != nil {
+		return fmt.Errorf("failed to parse release info: %v", err)
+	}
+
+	if release.TagName > currentVersion {
+		fmt.Printf("New version available: %s (current: %s)\n", release.TagName, currentVersion)
+		fmt.Println("Updating Rudder...")
+
+		// Run the install script to update
+		installScript := filepath.Join(os.Getenv("HOME"), ".rudder", "install.sh")
+		if _, err := os.Stat(installScript); os.IsNotExist(err) {
+			// Download install script if it doesn't exist
+			resp, err := http.Get("https://raw.githubusercontent.com/bfscordeiro/rudder/main/install.sh")
+			if err != nil {
+				return fmt.Errorf("failed to download install script: %v", err)
+			}
+			defer resp.Body.Close()
+
+			scriptData, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return fmt.Errorf("failed to read install script: %v", err)
+			}
+
+			if err := os.WriteFile(installScript, scriptData, 0755); err != nil {
+				return fmt.Errorf("failed to save install script: %v", err)
+			}
+		}
+
+		// Execute the install script
+		cmd := exec.Command(installScript)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if err := cmd.Run(); err != nil {
+			return fmt.Errorf("failed to update: %v", err)
+		}
+
+		// Save new version
+		if err := os.WriteFile(versionFile, []byte(release.TagName), 0644); err != nil {
+			return fmt.Errorf("failed to save version: %v", err)
+		}
+
+		fmt.Println("Update completed successfully!")
+		return nil
+	}
+
+	fmt.Println("Rudder is up to date!")
+	return nil
 }
 
 func main() {
@@ -26,6 +103,14 @@ func main() {
 
 	if command == "init" {
 		createRudderConfig()
+		return
+	}
+
+	if command == "update" {
+		if err := checkForUpdates(); err != nil {
+			fmt.Printf("Error: %v\n", err)
+			os.Exit(1)
+		}
 		return
 	}
 

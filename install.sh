@@ -52,11 +52,19 @@ BIN_DIR="$INSTALL_DIR/bin"
 print_message "Creating installation directory at $INSTALL_DIR"
 mkdir -p "$BIN_DIR"
 
+# Get the latest version
+LATEST_VERSION=$(curl -s https://api.github.com/repos/brunofrank/rudder/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+
+if [ -z "$LATEST_VERSION" ]; then
+    print_error "Failed to get latest version"
+    exit 1
+fi
+
 # Download the latest release
 LATEST_RELEASE_URL="https://github.com/brunofrank/rudder/releases/latest/download/$ASSET_NAME"
 TEMP_FILE="$INSTALL_DIR/temp.tar.gz"
 
-print_message "Downloading Rudder..."
+print_message "Downloading Rudder $LATEST_VERSION..."
 if ! curl -L "$LATEST_RELEASE_URL" -o "$TEMP_FILE"; then
     print_error "Failed to download Rudder"
     exit 1
@@ -74,6 +82,9 @@ rm "$TEMP_FILE"
 
 # Make the binary executable
 chmod +x "$BIN_DIR/rudder"
+
+# Save version information
+echo "$LATEST_VERSION" > "$INSTALL_DIR/version"
 
 # Add to PATH if not already present
 SHELL_RC=""
@@ -120,5 +131,6 @@ if [ "$create_alias" = "y" ] || [ "$create_alias" = "Y" ]; then
     fi
 fi
 
-print_message "Installation complete! Rudder has been installed to $BIN_DIR"
+print_message "Installation complete! Rudder $LATEST_VERSION has been installed to $BIN_DIR"
 print_message "You can now use Rudder by running 'rudder' or your custom alias (after restarting your terminal)"
+print_message "To check for updates, run 'rudder update'"
