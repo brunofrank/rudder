@@ -26,6 +26,7 @@ type Release struct {
 
 func checkForUpdates() error {
 	// Get current version
+	currentVersion := "v0.0.0" // This should be replaced with actual version during build
 	versionFile := filepath.Join(os.Getenv("HOME"), ".rudder", "version")
 	if data, err := os.ReadFile(versionFile); err == nil {
 		currentVersion = strings.TrimSpace(string(data))
