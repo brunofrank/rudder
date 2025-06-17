@@ -4,6 +4,18 @@
 
 rudder is a set of helpers to easily opperate docker-compose commands
 
+# Installation
+
+```sh
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/brunofrank/rudder/refs/heads/main/install.sh)"
+```
+
+In the project root you want to use rudder run:
+
+```sh
+rudder init
+```
+
 # Project configuration
 
 Given that every project has diferent docker-compose you can teach rudder your comands using
