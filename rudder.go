@@ -57,7 +57,7 @@ func checkForUpdates() error {
 		installScript := filepath.Join(os.Getenv("HOME"), ".rudder", "install.sh")
 		if _, err := os.Stat(installScript); os.IsNotExist(err) {
 			// Download install script if it doesn't exist
-			resp, err := http.Get("https://raw.githubusercontent.com/bfscordeiro/rudder/main/install.sh")
+			resp, err := http.Get("https://raw.githubusercontent.com/brunofrank/rudder/refs/heads/main/install.sh")
 			if err != nil {
 				return fmt.Errorf("failed to download install script: %v", err)
 			}
