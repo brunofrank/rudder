@@ -45,11 +45,7 @@ func main() {
 	args := os.Args[2:]
 
 	// Get the command definition from config
-	cmdDef, exists := config.Rudder.Commands[command]
-	if !exists {
-		fmt.Printf("Command '%s' not found in .rudder.yml\n", command)
-		os.Exit(1)
-	}
+	cmdDef, _ := config.Rudder.Commands[command]
 
 	// Handle different types of command definitions
 	switch cmd := cmdDef.(type) {
@@ -62,8 +58,7 @@ func main() {
 			}
 		}
 	default:
-		fmt.Printf("Invalid command definition for '%s'\n", command)
-		os.Exit(1)
+		executeCommand(os.Args[1], args, config.Rudder.DefaultService)
 	}
 }
 
