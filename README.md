@@ -33,10 +33,10 @@ rudder:
     db:migrate: rails db:migrate
     db:rollback: rails db:migrate
     rake: bundle exec rake $ARGS
-    gem: bundle exec gem $ARGS
+    gem: bundle exec gem $ARGS # You use $ARGS to pass every argument after the command to the command eg. rudder gem install rails
     console: bundle exec rails c
     logs: logs -f @ host # You use @ host do run the command in the host machine
-    yarn: yarn $ARGS @ frontend # You use @ to define in what docker compose service it should run
+    yarn: yarn $ARGS @ frontend # You use @ to define in what docker service it should run
     restart: restart @ host
     restart:web: restart web @ host
     pristine:
