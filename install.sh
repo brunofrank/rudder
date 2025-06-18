@@ -133,4 +133,4 @@ fi
 
 print_message "Installation complete! Rudder $LATEST_VERSION has been installed to $BIN_DIR"
 print_message "You can now use Rudder by running 'rudder' or your custom alias (after restarting your terminal)"
-print_message "To check for updates, run 'rudder update'"
+print_message "To check for updates, run 'rudder --update'"

@@ -35,8 +35,8 @@ rudder:
     rake: bundle exec rake $ARGS
     gem: bundle exec gem $ARGS
     console: bundle exec rails c
-    logs: logs -f @ host
-    yarn: yarn $ARGS
+    logs: logs -f @ host # You use @ host do run the command in the host machine
+    yarn: yarn $ARGS @ frontend # You use @ to define in what docker compose service it should run
     restart: restart @ host
     restart:web: restart web @ host
     pristine:
