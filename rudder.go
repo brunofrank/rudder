@@ -144,7 +144,7 @@ func main() {
 			}
 		}
 	default:
-		executeCommand(os.Args[1], args, config.Rudder.DefaultService)
+		executeComposeCommand(os.Args[1], args)
 	}
 }
 
@@ -198,6 +198,24 @@ func executeCommand(cmdStr string, args []string, defaultService string) {
 		// Docker Compose execution
 		finalCmd = exec.Command("bash", "-c", fmt.Sprintf("docker compose run --rm %s %s", service, cmd))
 	}
+
+	// Set up pipes for output
+	finalCmd.Stdout = os.Stdout
+	finalCmd.Stderr = os.Stderr
+	finalCmd.Stdin = os.Stdin
+
+	// Execute the command
+	if err := finalCmd.Run(); err != nil {
+		fmt.Printf("Error executing command: %v\n", err)
+		os.Exit(1)
+	}
+}
+
+func executeComposeCommand(cmdStr string, args []string) {
+	// Prepare the command
+	var finalCmd *exec.Cmd
+	// Docker Compose execution
+	finalCmd = exec.Command("bash", "-c", fmt.Sprintf("docker compose %s %s", cmdStr, strings.Join(args, " ")))
 
 	// Set up pipes for output
 	finalCmd.Stdout = os.Stdout
