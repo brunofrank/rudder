@@ -6,18 +6,89 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
+SILENT=false
+ALIAS_NAME=""
+
 # Function to print colored messages
 print_message() {
-    echo -e "${GREEN}[Rudder]${NC} $1"
+    if [ "$SILENT" = false ]; then
+        echo -e "${GREEN}[Rudder]${NC} $1"
+    fi
 }
 
 print_error() {
-    echo -e "${RED}[Error]${NC} $1"
+    echo -e "${RED}[Error]${NC} $1" >&2
 }
 
 print_warning() {
-    echo -e "${YELLOW}[Warning]${NC} $1"
+    echo -e "${YELLOW}[Warning]${NC} $1" >&2
 }
+
+print_usage() {
+    echo "Usage: install.sh [-s|--silent] [-a|--alias <name>]"
+    echo "  -s, --silent        Install without prompts, printing only warnings and errors"
+    echo "  -a, --alias <name>  Create an alias for rudder without asking"
+}
+
+# The alias is written to the shell rc file, so only allow safe names
+is_valid_alias() {
+    case "$1" in
+        ""|-*|*[!A-Za-z0-9_-]*) return 1 ;;
+    esac
+}
+
+create_alias() {
+    if [ -z "$SHELL_RC" ]; then
+        print_warning "Could not create alias '$1': unsupported shell"
+    elif grep -qsF "alias $1=\"$BIN_DIR/rudder\"" "$SHELL_RC"; then
+        print_warning "Alias '$1' already exists"
+    elif echo "alias $1=\"$BIN_DIR/rudder\"" >> "$SHELL_RC"; then
+        print_message "Alias '$1' created successfully"
+        print_message "Please restart your terminal or run 'source $SHELL_RC' to use the alias"
+    else
+        print_error "Failed to write alias '$1' to $SHELL_RC"
+        exit 1
+    fi
+}
+
+# Parse options
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -s|--silent)
+            SILENT=true
+            ;;
+        -a|--alias|--alias=*)
+            case "$1" in
+                --alias=*)
+                    ALIAS_NAME="${1#--alias=}"
+                    ;;
+                *)
+                    shift
+                    ALIAS_NAME="${1:-}"
+                    ;;
+            esac
+            if ! is_valid_alias "$ALIAS_NAME"; then
+                print_error "--alias requires a name made of letters, numbers, '_' or '-'"
+                exit 1
+            fi
+            ;;
+        -h|--help)
+            print_usage
+            exit 0
+            ;;
+        *)
+            print_error "Unknown option: $1"
+            print_usage >&2
+            exit 1
+            ;;
+    esac
+    shift
+done
+
+CURL_OPTS="-L"
+if [ "$SILENT" = true ]; then
+    CURL_OPTS="-sSL"
+fi
 
 # Detect OS and architecture
 OS="$(uname -s)"
@@ -65,7 +136,7 @@ LATEST_RELEASE_URL="https://github.com/brunofrank/rudder/releases/latest/downloa
 TEMP_FILE="$INSTALL_DIR/temp.tar.gz"
 
 print_message "Downloading Rudder $LATEST_VERSION..."
-if ! curl -L "$LATEST_RELEASE_URL" -o "$TEMP_FILE"; then
+if ! curl "$CURL_OPTS" "$LATEST_RELEASE_URL" -o "$TEMP_FILE"; then
     print_error "Failed to download Rudder"
     exit 1
 fi
@@ -101,33 +172,31 @@ case "$SHELL" in
 esac
 
 if [ -n "$SHELL_RC" ]; then
-    if ! grep -q "export PATH=\"\$PATH:$BIN_DIR\"" "$SHELL_RC"; then
+    if ! grep -qs "export PATH=\"\$PATH:$BIN_DIR\"" "$SHELL_RC"; then
         print_message "Adding Rudder to PATH in $SHELL_RC"
         echo "export PATH=\"\$PATH:$BIN_DIR\"" >> "$SHELL_RC"
         print_message "Please restart your terminal or run 'source $SHELL_RC' to update your PATH"
     fi
 fi
 
-# Ask for alias
-print_message "Would you like to create an alias for Rudder? (y/n)"
-read -r create_alias
+# Create the alias given by --alias, or ask for one unless running silently
+if [ -n "$ALIAS_NAME" ]; then
+    create_alias "$ALIAS_NAME"
+elif [ "$SILENT" = false ]; then
+    print_message "Would you like to create an alias for Rudder? (y/n)"
+    read -r wants_alias
 
-if [ "$create_alias" = "y" ] || [ "$create_alias" = "Y" ]; then
-    print_message "What alias would you like to use? (e.g., 'rd')"
-    read -r alias_name
+    if [ "$wants_alias" = "y" ] || [ "$wants_alias" = "Y" ]; then
+        print_message "What alias would you like to use? (e.g., 'rd')"
+        read -r alias_name
 
-    if [ -n "$alias_name" ]; then
-        if [ -n "$SHELL_RC" ]; then
-            if ! grep -q "alias $alias_name=\"$BIN_DIR/rudder\"" "$SHELL_RC"; then
-                echo "alias $alias_name=\"$BIN_DIR/rudder\"" >> "$SHELL_RC"
-                print_message "Alias '$alias_name' created successfully"
-                print_message "Please restart your terminal or run 'source $SHELL_RC' to use the alias"
-            else
-                print_warning "Alias '$alias_name' already exists"
-            fi
+        if [ -z "$alias_name" ]; then
+            print_warning "No alias name provided, skipping alias creation"
+        elif ! is_valid_alias "$alias_name"; then
+            print_warning "Invalid alias name '$alias_name', skipping alias creation"
+        else
+            create_alias "$alias_name"
         fi
-    else
-        print_warning "No alias name provided, skipping alias creation"
     fi
 fi
 
