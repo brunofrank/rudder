@@ -10,6 +10,15 @@ rudder is a set of helpers to easily opperate docker-compose commands
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/brunofrank/rudder/refs/heads/main/install.sh)"
 ```
 
+To install without any prompts, use `--silent` (`-s`). Only warnings and errors are printed.
+Optionally, use `--alias` (`-a`) to create an alias:
+
+```sh
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/brunofrank/rudder/refs/heads/main/install.sh)" -- --silent --alias rd
+```
+
+`--alias` can also be used without `--silent`, to skip only the alias questions.
+
 In the project root you want to use rudder run:
 
 ```sh
